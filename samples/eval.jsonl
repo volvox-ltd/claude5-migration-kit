@@ -1,0 +1,3 @@
+{"prompt": "次の JSON から email の値だけを答えてください: {\"name\": \"Sato\", \"email\": \"sato@example.com\"}", "expect": "sato@example.com"}
+{"prompt": "1 から 10 までの整数の和を数字だけで答えてください。", "expect": "55"}
+{"prompt": "「東京都千代田区」の都道府県名だけを答えてください。", "expect": "東京都"}
