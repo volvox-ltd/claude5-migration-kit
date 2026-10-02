@@ -1,5 +1,8 @@
 # claude5-migration-kit
 
+> Claude Opus 5 / Sonnet 5 / Fable 5.1 への移行で **400 になる箇所** と **黙って挙動が変わる箇所** を、既存コードから静的に見つけるツール。
+> 解説: [Claude 5 世代 移行ガイド（Zenn 本）](https://zenn.dev/persimmoq/books/claude-5-migration-guide) ／ [model だけ変えて移行すると壊れる 7 つの理由（記事）](https://zenn.dev/persimmoq/articles/claude-opus-5-migration-400-errors)
+
 Zenn 本『Claude 5 世代 移行ガイド ― Opus 5 / Sonnet 5 / Fable 5.1 で変わった API とプロンプト』の付属ツールです。
 
 | ツール | API | 用途 |
