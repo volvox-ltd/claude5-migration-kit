@@ -128,15 +128,23 @@ class Finding:
     fix: str
 
 
+MAX_BYTES = 1_000_000  # これより大きいファイル（minified バンドル・データ）は飛ばす
+
+
 def iter_files(root: Path):
     if root.is_file():
         yield root
         return
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
         for fn in filenames:
             p = Path(dirpath) / fn
             if p.suffix in EXTS or fn.startswith(".env"):
+                try:
+                    if p.stat().st_size > MAX_BYTES:
+                        continue
+                except OSError:
+                    continue
                 yield p
 
 
@@ -164,9 +172,11 @@ def scan_file(path: Path, target: str) -> list[Finding]:
 def scan(root: str | Path, target: str = "all") -> list[Finding]:
     root = Path(root)
     findings: list[Finding] = []
-    for f in iter_files(root):
+    for i, f in enumerate(iter_files(root), 1):
         if f.resolve() == Path(__file__).resolve():
             continue
+        if i % 2000 == 0:
+            print(f"... {i} files", file=sys.stderr)
         findings.extend(scan_file(f, target))
     findings.sort(key=lambda x: (x.severity != "BLOCKS", x.hazard, x.file, x.line))
     return findings
