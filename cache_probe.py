@@ -15,7 +15,7 @@ import anthropic
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="claude-opus-5")
+    ap.add_argument("--model", default="claude-opus-5-5")
     ap.add_argument("--system-file", required=True)
     ap.add_argument("--question", default="この指示書の要点を 1 行で。")
     a = ap.parse_args()

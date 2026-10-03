@@ -15,7 +15,7 @@ import anthropic
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="claude-opus-5")
+    ap.add_argument("--model", default="claude-opus-5-5")
     ap.add_argument("--prompt", default="Python で CSV を読む最小のコードを 1 つ。")
     a = ap.parse_args()
     client = anthropic.Anthropic()

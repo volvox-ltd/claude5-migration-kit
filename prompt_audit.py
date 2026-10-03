@@ -4,7 +4,7 @@
     python prompt_audit.py <file or dir> [--json]
 
 対象: *.md *.txt *.yaml *.yml *.json *.py *.ts *.js（プロンプト文字列が入っていそうなもの）
-出力: 行ごとに「パターン / なぜ今は害になるか / 直し方」。削除の最終判断は人がする（本文 第 8 章の keep list を参照）。
+出力: 行ごとに「パターン / なぜ今は害になるか / 直し方」。削除の最終判断は人がする（本文 第 9 章の keep list を参照）。
 """
 from __future__ import annotations
 
@@ -133,7 +133,7 @@ def render(findings: list[dict]) -> str:
             last = f["id"]
         out.append(f"      {f['file']}:{f['line']}  {f['text']}")
     out.append("")
-    out.append("注意: これは候補の列挙です。読者・製品・品質基準・ツールの契約・理由付きの制約は残します（本文 第 8 章の keep list）。")
+    out.append("注意: これは候補の列挙です。読者・製品・品質基準・ツールの契約・理由付きの制約は残します（本文 第 9 章の keep list）。")
     return "\n".join(out)
 
 

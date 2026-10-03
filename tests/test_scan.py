@@ -14,7 +14,7 @@ def ids(findings):
 
 def test_legacy_app_hits_every_hazard():
     got = ids(scan.scan(FIX / "legacy_app.py"))
-    expected = {"H01", "H02", "H03", "H04", "H06", "H07", "H08", "H09", "H10", "H11", "H12", "H13", "H14", "H15", "H16"}
+    expected = {"H01", "H02", "H03", "H04", "H06", "H07", "H08", "H09", "H10", "H11", "H12", "H13", "H14", "H15", "H16", "H18", "H19"}
     missing = expected - got
     assert not missing, f"未検出: {sorted(missing)}"
 
@@ -30,6 +30,11 @@ def test_target_filter():
     assert "H07" in all_ and "H07" not in sonnet          # 強制 tool_choice は Fable 5.1 だけ
     assert "H15" in all_ and "H15" not in sonnet          # 履歴編集も Fable 5.1 だけ
     assert "H02" in sonnet                                 # budget_tokens は全モデル
+    s55 = ids(scan.scan(FIX / "legacy_app.py", "sonnet-5-5"))
+    o55 = ids(scan.scan(FIX / "legacy_app.py", "opus-5-5"))
+    assert {"H07", "H08", "H18", "H19"} <= s55             # 5.5 系で増えた BLOCKS
+    assert {"H07", "H08", "H18"} <= o55 and "H19" not in o55  # advisor 制限は Sonnet 5.5 だけ
+    assert "H18" not in ids(scan.scan(FIX / "legacy_app.py", "opus-5"))
 
 
 def test_cli_exit_code(capsys):

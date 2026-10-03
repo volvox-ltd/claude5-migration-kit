@@ -32,3 +32,14 @@ def chat(messages):
         if b.type == "thinking":
             print(b.thinking)                     # H09
     return r
+
+
+def computer_use_and_advisor(client):
+    return client.beta.messages.create(
+        model="claude-sonnet-4-5-20250929", max_tokens=4096,                 # H01（Sonnet 4.5 は 2026-11-30 引退）
+        betas=["computer-use-2025-11-24"],
+        tools=[{"type": "computer_20251124", "name": "computer",           # H18
+                "display_width_px": 1280, "display_height_px": 800},
+               {"type": "advisor_20260301", "name": "advisor", "model": "claude-opus-4-8"}],  # H19
+        messages=[{"role": "user", "content": "..."}],
+    )
