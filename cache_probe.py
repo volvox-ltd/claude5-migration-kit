@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """cache_probe ― 同じリクエストを 2 回送り、2 回目で cache_read_input_tokens > 0 になることを確かめる。
 
-    python cache_probe.py --model claude-opus-5 --system-file prompts/system.md
+    python cache_probe.py --model claude-opus-5-5 --system-file prompts/system.md
 
 キャッシュが効いているかは usage の数字だけが根拠。コードレビューでは分からない。
 プロンプト組み立てを変えたら、毎回これを回す（CI に入れてよい。exit 1 = 効いていない）。
-モデルごとの最小キャッシュ長: Opus 5 / Fable 5.1 は 512、Opus 4.8 / Sonnet 5 は 1024、Opus 4.6 / Haiku 4.5 は 4096 トークン。
+モデルごとの最小キャッシュ長: Opus 5.5 / Sonnet 5.5 / Opus 5 / Fable 5.1 は 512、Opus 4.8 / Sonnet 5 は 1024、Opus 4.6 / Haiku 4.5 は 4096 トークン。
 """
 import argparse
 import sys
