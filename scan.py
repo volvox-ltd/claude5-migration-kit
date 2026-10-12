@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""claude5-migration-kit: scan ― Claude 5 世代（Opus 5.5 / Sonnet 5.5 / Opus 5 / Sonnet 5 / Fable 5.1）への移行で
+"""claude5-migration-kit: scan ― Claude 5 世代（Opus 5.5 / Sonnet 5.5 / Haiku 5.5 / Opus 5 / Sonnet 5 / Fable 5.1）への移行で
 壊れる・黙って変わる箇所を、ソースコードから静的に見つける。
 
-    python scan.py <path> [--target opus-5-5|sonnet-5-5|opus-5|sonnet-5|fable-5-1] [--json] [--fail-on-blocks]
+    python scan.py <path> [--target opus-5-5|sonnet-5-5|haiku-5-5|opus-5|sonnet-5|fable-5-1] [--json] [--fail-on-blocks]
 
 - 言語を問わず正規表現で探す（Python / TypeScript / Go / Ruby / Java / PHP / cURL のスクリプト等）
 - 見つかったものは hazard ID・重大度（BLOCKS = 400 や無音の truncation / TUNE = 挙動変化）・修正のヒント付き
@@ -19,7 +19,7 @@ import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-TARGETS = ("opus-5-5", "sonnet-5-5", "opus-5", "sonnet-5", "fable-5-1", "all")
+TARGETS = ("opus-5-5", "sonnet-5-5", "haiku-5-5", "opus-5", "sonnet-5", "fable-5-1", "all")
 EXTS = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".go", ".rb", ".java", ".kt", ".cs", ".php", ".sh", ".yaml", ".yml", ".json", ".toml", ".env", ".txt", ".md"}
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "dist", "build", ".next", "__pycache__", "vendor", ".tox", ".mypy_cache"}
 
@@ -39,7 +39,7 @@ HAZARDS: list[Hazard] = [
     Hazard("H01", "BLOCKS", ("all",),
            r"claude-(3-[a-z0-9-]+|2\.[01]|instant[a-z0-9-]*|opus-4-20250514|sonnet-4-20250514|opus-4-1(-20250805)?|sonnet-4-5(-20250929)?)\b",
            "引退済み・引退予定のモデル ID（Sonnet 4.5 は 2026-11-30 引退）",
-           "claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-4-5 のいずれかに置換（本文 第 1 章の対応表）"),
+           "claude-opus-5-5 / claude-sonnet-5-5 / claude-haiku-5-5 のいずれかに置換（本文 第 1 章の対応表）"),
     Hazard("H02", "BLOCKS", ("all",),
            r"budget_tokens|[\"']type[\"']\s*[:=]\s*[\"']enabled[\"']",
            "固定予算の拡張思考（budget_tokens / type: enabled）",
@@ -65,10 +65,10 @@ HAZARDS: list[Hazard] = [
            r"tool_choice\s*[:=]\s*\{[^}]*[\"']type[\"']\s*[:=]\s*[\"'](any|tool)[\"']",
            "強制ツール呼び出し（tool_choice any / tool）",
            "Opus 5.5 / Sonnet 5.5 / Fable 5.1 では 400（count_tokens でも）。tool_choice auto ＋ プロンプトでツール名を指定、引数の保証は strict: true、JSON 抽出なら構造化出力"),
-    Hazard("H08", "BLOCKS", ("opus-5", "opus-5-5", "sonnet-5-5", "fable-5-1"),
+    Hazard("H08", "BLOCKS", ("opus-5", "opus-5-5", "sonnet-5-5", "haiku-5-5", "fable-5-1"),
            r"[\"']type[\"']\s*[:=]\s*[\"']disabled[\"']",
            "thinking: disabled",
-           "Opus 5.5 / Fable 5.1 では常に 400 → thinking を省略し effort を下げる。Sonnet 5.5 では {\"type\": \"between_tools\"}（effort high 以下）に置換。Opus 5 では xhigh/max との併用で 400、かつツール呼び出しが本文に漏れる既知の不具合あり"),
+           "Opus 5.5 / Fable 5.1 では常に 400 → thinking を省略し effort を下げる。Sonnet 5.5 では {\"type\": \"between_tools\"}（effort high 以下）に置換。Opus 5 / Haiku 5.5 では xhigh/max との併用で 400（Opus 5 はツール呼び出しが本文に漏れる既知の不具合あり）"),
     Hazard("H09", "TUNE", ("all",),
            r"\.thinking\b(?!\s*=)|\[[\"']thinking[\"']\]",
            "thinking ブロックの本文を読んでいる",
@@ -77,7 +77,7 @@ HAZARDS: list[Hazard] = [
            r"content\[0\]\.text|content\[0\][\"']text[\"']|\.content\[0\]\b",
            "stop_reason を見ずに content[0] を読んでいる",
            "refusal（HTTP 200・content 空）で落ちる。先に stop_reason を判定し、fallbacks: \"default\" への opt-in を検討"),
-    Hazard("H11", "TUNE", ("opus-5", "opus-5-5", "sonnet-5", "sonnet-5-5", "fable-5-1"),
+    Hazard("H11", "TUNE", ("opus-5", "opus-5-5", "sonnet-5", "sonnet-5-5", "haiku-5-5", "fable-5-1"),
            r"max_tokens\s*[:=]\s*(?:[1-9]\d{0,2}|[1-3]\d{3})\b",
            "小さい max_tokens（4,000 未満）",
            "思考が既定でオンになり、max_tokens は思考＋本文の合計上限。途中で切れる（stop_reason: max_tokens）。16,000 以上、エージェントは 64,000 を目安に"),
@@ -93,7 +93,7 @@ HAZARDS: list[Hazard] = [
            r"(system\s*[:=][^\n]*(datetime\.now|Date\.now|time\.time|uuid4|randomUUID|new Date\())",
            "システムプロンプトに時刻や乱数を埋め込んでいる（キャッシュ無効化）",
            "プレフィックスが毎回変わりキャッシュが一切効かない。動的な情報は messages の末尾（role: system メッセージ等）へ"),
-    Hazard("H15", "TUNE", ("opus-5-5", "sonnet-5-5", "fable-5-1"),
+    Hazard("H15", "TUNE", ("opus-5-5", "sonnet-5-5", "haiku-5-5", "fable-5-1"),
            r"messages\s*=\s*messages\[-\d+:\]|messages\.pop\(0\)|del\s+messages\[|messages\.splice\(0|messages\.shift\(\)|history\[-\d+:\]",
            "会話履歴の先頭・途中を削っている（履歴編集）",
            "Opus 5.5 / Sonnet 5.5 / Fable 5.1 の preserved thinking で 400 または思考ブロックの破棄。compaction（compact-2026-09-04 のオンデマンド型を含む）か、要約 1 本に差し替える simple compaction へ"),
@@ -101,14 +101,14 @@ HAZARDS: list[Hazard] = [
            r"claude-opus-4-[678]-fast\b",
            "-fast 付きモデル ID",
            "claude-opus-5-5 ＋ speed=\"fast\" ＋ betas=[\"fast-mode-2026-02-01\"]（client.beta.messages）。4.6-fast は黙って通常速度に落ち、4.7-fast はエラー"),
-    Hazard("H17", "TUNE", ("opus-5-5", "sonnet-5-5", "fable-5-1"),
+    Hazard("H17", "TUNE", ("opus-5-5", "sonnet-5-5", "haiku-5-5", "fable-5-1"),
            r"system\s*[:=]\s*[^\n]*(f[\"']|\$\{|\+\s*[a-zA-Z_]+\s*\+|%s|\{\{)",
            "システムプロンプトを毎リクエスト組み立てている（可変の可能性）",
            "セッション中に top-level system が変わると preserved thinking の検査で 400。固定し、変更は role: system メッセージで追記"),
-    Hazard("H18", "BLOCKS", ("opus-5-5", "sonnet-5-5"),
-           r"computer_2025(1124|0124)\b|computer-use-2025-11-24",
+    Hazard("H18", "BLOCKS", ("opus-5-5", "sonnet-5-5", "haiku-5-5"),
+           r"computer_2025(1124|0124)\b|computer-use-2025-(11-24|01-24)",
            "旧コンピュータ操作ツール（computer_20251124 / computer_20250124）",
-           "Claude API / Google Cloud では computer_toolset_20260801（ベータヘッダ不要）に移行し、fine-grained-tool-streaming ヘッダを外す。Bedrock は computer_20251124 のまま"),
+           "Claude API / Google Cloud では computer_toolset_20260801（ベータヘッダ不要）に移行し、fine-grained-tool-streaming ヘッダを外す。Bedrock は computer_20251124（Haiku 5.5 も computer_20250124 は不可）"),
     Hazard("H19", "BLOCKS", ("sonnet-5-5",),
            r"advisor[^\n]*claude-(opus-4-[678]|sonnet-4-6|sonnet-5)[\"']|claude-(opus-4-[678]|sonnet-4-6|sonnet-5)[\"'][^\n]*advisor",
            "Sonnet 5.5 が executor のとき使えない advisor モデル",
